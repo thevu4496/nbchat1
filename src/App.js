@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { db } from "./services/firebase";
+import io from 'socket.io-client';
 import {
   Route,
   BrowserRouter as Router,
@@ -60,7 +61,9 @@ class App extends Component {
       </Router>
     );
   }
-  
+  componentWillMount() {
+    this.socket = io('https://nbchatserver4.herokuapp.com/');
+  }
   componentDidMount() {
   auth().onAuthStateChanged((user) => {
     if (user) {

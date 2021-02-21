@@ -116,7 +116,6 @@ export default class Chat extends Component {
     }
     listenUsers(this);
   }
-
   handleChange(event) {
     this.setState({
       content: event.target.value
@@ -156,9 +155,12 @@ export default class Chat extends Component {
      }
      return null;
   }
-
+  hanldeSwitchConversation(user){
+    this.setState({conver_user : user});
+  }
 
   render() {
+    
     return (
       <div>
         <Header user_id={this.state.user.user_id} />
@@ -176,8 +178,8 @@ export default class Chat extends Component {
               </div>
               <div className="card-body contacts_body">
                 <ul className="contacts">
-                  {this.state.listUser.map(user => {
-                    return <li key={user.toString()}>
+                  {this.state.listUser.map((user,index) => {
+                    return <li key={index} className={"list__user " + (user.user_id == this.state.conver_user.user_id ? "active" : "")} onClick={this.hanldeSwitchConversation.bind(this, user)}>
                     <div className="d-flex bd-highlight">
                       <div className="img_cont">
                         <img src={user.profile_picture} className="rounded-circle user_img" />
@@ -186,7 +188,7 @@ export default class Chat extends Component {
                       <div className="user_info">
                         <span>{user.username}</span>
                         {
-                          user.logged ? "" : <p>{user.username} left {this.formatTime(user.last_online)} mins ago</p>
+                          user.logged ? "" : <p>left {this.formatTime(user.last_online)}</p>
                         }
                       </div>
                     </div>
@@ -224,7 +226,8 @@ export default class Chat extends Component {
               </div>
               <div className="card-body msg_card_body" ref={this.myRef}>
               {this.state.chats.map((chat, index) => {
-                    return <div key={index} className={"d-flex " +(chat.from_uid == this.state.conver_user.user_id ? 'justify-content-start' : 'justify-content-end') + " mb-4"}>
+                if((chat.from_uid == this.state.conver_user.user_id && chat.to_uid == this.state.user.user_id) || (chat.to_uid == this.state.conver_user.user_id && chat.from_uid == this.state.user.user_id) ){
+                  return <div key={index} className={"d-flex " +(chat.from_uid == this.state.conver_user.user_id ? 'justify-content-start' : 'justify-content-end') + " mb-4"}>
                     <div className="img_cont_msg">
                       <img src={chat.from_uid == this.state.conver_user.user_id ? this.state.conver_user.profile_picture : this.state.user.profile_picture} className="rounded-circle user_img_msg" />
                     </div>
@@ -233,6 +236,7 @@ export default class Chat extends Component {
                       <span className="msg_time">{this.formatTime(chat.timestamp)}</span>
                     </div>
                   </div>
+                } 
                   })}
               </div>
               <div className="card-footer">

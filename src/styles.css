@@ -192,10 +192,13 @@ body,html{
     margin-top: auto;
     margin-bottom: auto;
     margin-left: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff;
   }
   .user_info span{
     font-size: 20px;
-    color: white;
   }
   .user_info p{
   font-size: 10px;
@@ -231,11 +234,16 @@ body,html{
   }
   .msg_time{
     position: absolute;
-    left: 0;
     bottom: -15px;
     color: rgba(255,255,255,0.5);
     width: max-content;
     font-size: 10px;
+  }
+  .justify-content-start .msg_time{
+    left : 0;
+  }
+  .justify-content-end .msg_time{
+    right: 0;
   }
   .msg_time_send{
     position: absolute;
@@ -302,4 +310,8 @@ body,html{
 }
 span.input-group-text.send_btn {
   padding: 1.375rem .75rem;
+}
+
+.list__user{
+  cursor: pointer;
 }

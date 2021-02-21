@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/nbchat1/static/css/main.18b569ab.chunk.css",
+    "main.js": "/nbchat1/static/js/main.174d9b35.chunk.js",
+    "main.js.map": "/nbchat1/static/js/main.174d9b35.chunk.js.map",
+    "runtime-main.js": "/nbchat1/static/js/runtime-main.d54d8478.js",
+    "runtime-main.js.map": "/nbchat1/static/js/runtime-main.d54d8478.js.map",
+    "static/js/2.93428162.chunk.js": "/nbchat1/static/js/2.93428162.chunk.js",
+    "static/js/2.93428162.chunk.js.map": "/nbchat1/static/js/2.93428162.chunk.js.map",
+    "static/js/3.d5cbfa1c.chunk.js": "/nbchat1/static/js/3.d5cbfa1c.chunk.js",
+    "static/js/3.d5cbfa1c.chunk.js.map": "/nbchat1/static/js/3.d5cbfa1c.chunk.js.map",
+    "index.html": "/nbchat1/index.html",
+    "static/css/main.18b569ab.chunk.css.map": "/nbchat1/static/css/main.18b569ab.chunk.css.map",
+    "static/js/2.93428162.chunk.js.LICENSE.txt": "/nbchat1/static/js/2.93428162.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.d54d8478.js",
+    "static/js/2.93428162.chunk.js",
+    "static/css/main.18b569ab.chunk.css",
+    "static/js/main.174d9b35.chunk.js"
+  ]
+}

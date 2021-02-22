@@ -4,7 +4,7 @@ import { auth } from "../services/firebase";
 import { db } from "../services/firebase";
 import Result from '../pages/Result';
 import $ from 'jquery';
-import { readUsers , addUser , filterUserFrontEnd , updateUserConnection , listenUsers } from '../helpers/db';
+import { readUsers , addUser , filterUserFrontEnd , updateUserConnection , listenUsers , listenNewMessage } from '../helpers/db';
 export default class Chat extends Component {
   constructor(props) {
     super(props);
@@ -39,7 +39,6 @@ export default class Chat extends Component {
           to_uid : this.state.conver_user.user_id,
         };
         await db.ref("chats").push(data);
-        this.state.chats.push(data);
         this.setState({ content: '' });
         chatArea.scrollBy(0, chatArea.scrollHeight);
       } catch (error) {
@@ -50,6 +49,63 @@ export default class Chat extends Component {
   async componentWillUnmount() {
     this._isMounted = false;
  }
+  loadApp(firt){
+    const chatArea = this.myRef.current;
+    db.ref("users").once("value", snapshot => {
+      let users = [];
+      let snap = snapshot.val();
+      for(var s in snap){
+          let u = snap[s];
+          u.user_id = s;
+        users.push(u);
+    }
+    this.setState({ users : users });
+      db.ref("chats").once("value", snapshot => {
+        let chats = [];
+        snapshot.forEach((snap) => {
+          let mess = snap.val();
+          if(mess.from_uid == this.state.user.user_id || mess.to_uid == this.state.user.user_id){
+            chats.push(mess);
+          }
+        });
+        chats.sort(function (a, b) { return a.timestamp - b.timestamp });
+        let listUser = [];
+        chats.forEach( mess => {
+          if(mess.from_uid == this.state.user.user_id){
+            if(!listUser.find(e => e.user_id == mess.to_uid)){
+              let ur = users.find(u => u.user_id == mess.to_uid);
+              if(typeof ur != "undefined"){
+                listUser.push(ur);
+              }
+            }
+          }
+          else{
+            if(!listUser.find(e => e.user_id == mess.from_uid)){
+              let ur = users.find(u => u.user_id == mess.from_uid);
+              if(typeof ur != "undefined"){
+                listUser.push(ur);
+              }
+            }
+          }
+        })
+        this.setState({ listUser : listUser });
+        let converId;
+        if(chats.length && firt){
+          if(chats[0].from_uid == this.state.user.user_id){
+            converId = chats[0].to_uid;
+          }
+          else{
+            converId = chats[0].from_uid;
+          }
+          let converUser =  users.filter(us => us.user_id == converId);
+          this.setState({ conver_user : converUser[0] });
+        }
+        this.setState({ chats : chats });
+        chatArea.scrollBy(0, chatArea.scrollHeight);
+        this.setState({ loadingChats: false });
+      });
+    });
+  }
   async componentDidMount() {
     this._isMounted = true;
     $(document).ready(function(){
@@ -58,68 +114,16 @@ export default class Chat extends Component {
       });
 	  });
     this.setState({ readError: null, loadingChats: true });
-    const chatArea = this.myRef.current;
+    
     updateUserConnection(this.props.user.user_id);
     try {
-    	db.ref("users").once("value", snapshot => {
-		    let users = [];
-		    let snap = snapshot.val();
-		    for(var s in snap){
-		      	let u = snap[s];
-		      	u.user_id = s;
-		     	users.push(u);
-			}
-      this.setState({ users : users });
-	    	db.ref("chats").once("value", snapshot => {
-	        let chats = [];
-	        snapshot.forEach((snap) => {
-	        	let mess = snap.val();
-	        	if(mess.from_uid == this.state.user.user_id || mess.to_uid == this.state.user.user_id){
-	        		chats.push(mess);
-	        	}
-	        });
-	        chats.sort(function (a, b) { return a.timestamp - b.timestamp });
-          let listUser = [];
-          chats.forEach( mess => {
-            if(mess.from_uid == this.state.user.user_id){
-              if(!listUser.find(e => e.user_id == mess.to_uid)){
-                let ur = users.find(u => u.user_id == mess.to_uid);
-                if(typeof ur != "undefined"){
-                  listUser.push(ur);
-                }
-              }
-            }
-            else{
-              if(!listUser.find(e => e.user_id == mess.from_uid)){
-                let ur = users.find(u => u.user_id == mess.from_uid);
-                if(typeof ur != "undefined"){
-                  listUser.push(ur);
-                }
-              }
-            }
-          })
-          this.setState({ listUser : listUser });
-	        let converId;
-          if(chats.length){
-            if(chats[0].from_uid == this.state.user.user_id){
-              converId = chats[0].to_uid;
-            }
-            else{
-              converId = chats[0].from_uid;
-            }
-            let converUser =  users.filter(us => us.user_id == converId);
-            this.setState({ conver_user : converUser[0] });
-          }
-	        this.setState({ chats : chats });
-	        chatArea.scrollBy(0, chatArea.scrollHeight);
-	        this.setState({ loadingChats: false });
-		    });
-    	});
+    	this.loadApp(true)
 	    
     } catch (error) {
       this.setState({ readError: error.message, loadingChats: false });
     }
     listenUsers(this);
+    listenNewMessage(this);
   }
   handleChange(event) {
     this.setState({
@@ -139,7 +143,6 @@ export default class Chat extends Component {
         to_uid : this.state.conver_user.user_id,
       };
       await db.ref("chats").push(data);
-      this.state.chats.push(data);
       this.setState({ content: '' });
       chatArea.scrollBy(0, chatArea.scrollHeight);
     } catch (error) {

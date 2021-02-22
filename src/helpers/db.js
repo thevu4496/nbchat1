@@ -74,3 +74,9 @@ export function addUser(email,name,photo) {
     profile_picture : photo,
   });
 }
+export function listenNewMessage(t){
+  db.ref("chats").on('child_added', (data) => {
+    console.log(data);
+    t.loadApp(false);
+  });
+}

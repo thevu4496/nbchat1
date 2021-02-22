@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Header from "../components/Header";
 import { auth } from "../services/firebase";
 import { db } from "../services/firebase";
+import Result from '../pages/Result';
 import $ from 'jquery';
 import { readUsers , addUser , filterUserFrontEnd , updateUserConnection , listenUsers } from '../helpers/db';
 export default class Chat extends Component {
@@ -12,13 +13,16 @@ export default class Chat extends Component {
       user: this.props.user,
       conver_user : {},
       chats: [],
+      users: [],
       listUser: [],
       content: '',
+      search : '',
       readError: null,
       writeError: null,
       loadingChats: false
     };
     this.handleChange = this.handleChange.bind(this);
+    this.handleChangeSearch = this.handleChangeSearch.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.checkEnter = this.checkEnter.bind(this);
     this.myRef = React.createRef();
@@ -65,6 +69,7 @@ export default class Chat extends Component {
 		      	u.user_id = s;
 		     	users.push(u);
 			}
+      this.setState({ users : users });
 	    	db.ref("chats").once("value", snapshot => {
 	        let chats = [];
 	        snapshot.forEach((snap) => {
@@ -158,9 +163,25 @@ export default class Chat extends Component {
   hanldeSwitchConversation(user){
     this.setState({conver_user : user});
   }
-
+  handleChangeSearch(e){
+    this.setState({
+      search: e.target.value
+    });
+  }
+  renderUser(user,index,search){
+      if(user.username.indexOf(search) !== -1){
+        return <div key={index} className="list__search" onClick={this.hanldeSwitchConversation.bind(this, user)}>
+                <div className="search__avatar"><img src={user.profile_picture} alt="" /></div>
+                <div className="search__info">
+                  <span className="info__name">{user.username}</span>
+                  <span className={"info__status " + (user.logged ? 'online' : 'offline')}>{user.logged ? 'online' : 'offline'}</span>
+                </div>
+              </div>
+      }
+      return null;
+  }
   render() {
-    
+   
     return (
       <div>
         <Header user_id={this.state.user.user_id} />
@@ -170,10 +191,16 @@ export default class Chat extends Component {
           <div className="col-md-4 col-xl-3 chat"><div className="card mb-sm-3 mb-md-0 contacts_card">
               <div className="card-header">
                 <div className="input-group">
-                  <input type="text" placeholder="Search..." className="form-control search" />
+                  <input type="text" placeholder="Search..." onChange={this.handleChangeSearch} value={this.state.search} className="form-control search" />
                   <div className="input-group-prepend">
                     <span className="input-group-text search_btn"><i className="fas fa-search" /></span>
                   </div>
+                  {this.state.search !== '' ? <div className="box__search">
+                    <h3 className="title__search">Discover</h3>
+                    <div className="warpper__search">
+                    {this.state.users.map((user,index) => this.renderUser(user,index,this.state.search))}
+                    </div>
+                  </div> : ''}
                 </div>
               </div>
               <div className="card-body contacts_body">

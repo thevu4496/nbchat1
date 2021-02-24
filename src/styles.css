@@ -299,8 +299,10 @@ body,html{
   }
 
   textarea.form-control.type_msg {
+    width: 100%;
     resize: none;
-    padding: 18px 0;
+    padding: 18px 10px;
+    background: #36405c;
 }
 .input-group-append button[type=submit]{
   background: transparent;
@@ -386,4 +388,66 @@ span.info__status.online::before{
 }
 span.info__status.offline{
   background-color: transparent !important;
+}
+
+.hidden__field{
+  display: none;
+}
+.message__field{
+  width: 90%;
+  position: relative;
+}
+.process_bar{
+  color: #516b8a;
+  position: absolute;
+  height: 3px;
+  z-index: 9;
+  background: #516b8a;
+  top: 0;
+  border-radius: 10px;
+}
+.list__upload{
+  display: flex;
+
+  width: 100%;
+  flex-wrap: wrap;
+}
+.image__upload{
+  position: relative;
+  margin-right: 15px;
+}
+
+.image__preview{
+  width: 50px;
+  border-radius: 10px;
+  height: 50px;
+}
+.remove__btn{
+  position: absolute;
+  right: -10px;
+  top: -3px;
+  background: #3e4042;
+  border-radius: 100%;
+  width: 20px;
+  line-height: 20px;
+  height: 20px;
+  text-align: center;
+  color: #ffffff;
+  cursor: pointer;
+}
+.remove__btn:hover{
+  background : #b0b3b8;
+  color: #242526;
+}
+img.image_attach {
+    width: 100px;
+    border-radius: 10px;
+    margin: 0 5px;
+}
+.msg_time_image{
+  width: 100%;
+  display: block;
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  text-align: right;
 }

@@ -2,6 +2,8 @@ import React, { Component } from "react";
 import Header from "../components/Header";
 import { auth } from "../services/firebase";
 import { db } from "../services/firebase";
+import { filter } from "../helpers/ultil";
+import axios from 'axios';
 import Result from '../pages/Result';
 import $ from 'jquery';
 import { readUsers , addUser , filterUserFrontEnd , updateUserConnection , listenUsers , listenNewMessage } from '../helpers/db';
@@ -19,10 +21,13 @@ export default class Chat extends Component {
       search : '',
       readError: null,
       writeError: null,
-      loadingChats: false
+      loadingChats: false,
+      processing : 0,
+      listFile : [],
     };
     this.handleChange = this.handleChange.bind(this);
     this.handleChangeSearch = this.handleChangeSearch.bind(this);
+    this.handleChangeFile = this.handleChangeFile.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.checkEnter = this.checkEnter.bind(this);
     this.myRef = React.createRef();
@@ -30,26 +35,33 @@ export default class Chat extends Component {
   async checkEnter(e) {
     if (e.keyCode === 13) {
       this.setState({ writeError: null });
-      const chatArea = this.myRef.current;
-      try {
-        let data = {
-          content: this.state.content,
-          timestamp: Date.now(),
-          from_uid: this.state.user.user_id,
-          to_uid : this.state.conver_user.user_id,
-        };
-        await db.ref("chats").push(data);
-        this.setState({ content: '' });
-        chatArea.scrollBy(0, chatArea.scrollHeight);
-      } catch (error) {
-        this.setState({ writeError: error.message });
+      if(this.state.content.trim() != '' || this.state.listFile.length != 0){
+        try {
+          let data = {
+            content: this.state.content,
+            timestamp: Date.now(),
+            from_uid: this.state.user.user_id,
+            to_uid : this.state.conver_user.user_id,
+          };
+          if(this.state.listFile.length != 0){
+            data.attach_files = this.state.listFile;
+          }
+          await db.ref("chats").push(data);
+          this.setState({ content: '' });
+          this.setState({ listFile: [] });
+        } catch (error) {
+          this.setState({ writeError: error.message });
+        }
+      }
+      else{
+        alert("Nhập chữ vào dkm !!!");
       }
     }
   }
   async componentWillUnmount() {
     this._isMounted = false;
  }
-  loadApp(firt){
+  loadApp(first){
     const chatArea = this.myRef.current;
     db.ref("users").once("value", snapshot => {
       let users = [];
@@ -58,8 +70,9 @@ export default class Chat extends Component {
           let u = snap[s];
           u.user_id = s;
         users.push(u);
-    }
-    this.setState({ users : users });
+      }
+      
+      this.setState({ users : users });
       db.ref("chats").once("value", snapshot => {
         let chats = [];
         snapshot.forEach((snap) => {
@@ -68,13 +81,14 @@ export default class Chat extends Component {
             chats.push(mess);
           }
         });
-        chats.sort(function (a, b) { return a.timestamp - b.timestamp });
+        chats.sort(function (a, b) { return b.timestamp - a.timestamp });
         let listUser = [];
         chats.forEach( mess => {
           if(mess.from_uid == this.state.user.user_id){
             if(!listUser.find(e => e.user_id == mess.to_uid)){
               let ur = users.find(u => u.user_id == mess.to_uid);
               if(typeof ur != "undefined"){
+                ur.last_msg = mess.timestamp;
                 listUser.push(ur);
               }
             }
@@ -83,26 +97,37 @@ export default class Chat extends Component {
             if(!listUser.find(e => e.user_id == mess.from_uid)){
               let ur = users.find(u => u.user_id == mess.from_uid);
               if(typeof ur != "undefined"){
+                ur.last_msg = mess.timestamp;
                 listUser.push(ur);
               }
             }
           }
         })
+        
         this.setState({ listUser : listUser });
         let converId;
-        if(chats.length && firt){
+        if(chats.length && first){
           if(chats[0].from_uid == this.state.user.user_id){
             converId = chats[0].to_uid;
           }
           else{
             converId = chats[0].from_uid;
           }
+          chats.sort(function (a, b) { return a.timestamp - b.timestamp });
           let converUser =  users.filter(us => us.user_id == converId);
           this.setState({ conver_user : converUser[0] });
         }
+        chats.sort(function (a, b) { return a.timestamp - b.timestamp });
         this.setState({ chats : chats });
-        chatArea.scrollBy(0, chatArea.scrollHeight);
+        if(chatArea != null){
+          setTimeout(function(){
+            chatArea.scrollBy(0, chatArea.scrollHeight);
+          },0)
+          
+        }
+        
         this.setState({ loadingChats: false });
+        listenUsers(this);
       });
     });
   }
@@ -114,16 +139,13 @@ export default class Chat extends Component {
       });
 	  });
     this.setState({ readError: null, loadingChats: true });
-    
     updateUserConnection(this.props.user.user_id);
     try {
-    	this.loadApp(true)
-	    
+    	this.loadApp(true);
+	    listenNewMessage(this);
     } catch (error) {
       this.setState({ readError: error.message, loadingChats: false });
     }
-    listenUsers(this);
-    listenNewMessage(this);
   }
   handleChange(event) {
     this.setState({
@@ -134,19 +156,27 @@ export default class Chat extends Component {
   async handleSubmit(event) {
     event.preventDefault();
     this.setState({ writeError: null });
-    const chatArea = this.myRef.current;
-    try {
-      let data = {
-        content: this.state.content,
-        timestamp: Date.now(),
-        from_uid: this.state.user.user_id,
-        to_uid : this.state.conver_user.user_id,
-      };
-      await db.ref("chats").push(data);
-      this.setState({ content: '' });
-      chatArea.scrollBy(0, chatArea.scrollHeight);
-    } catch (error) {
-      this.setState({ writeError: error.message });
+    if(this.state.content.trim() != '' || this.state.listFile.length != 0){
+      try {
+        let data = {
+          content: this.state.content,
+          timestamp: Date.now(),
+          from_uid: this.state.user.user_id,
+          to_uid : this.state.conver_user.user_id,
+        };
+        if(this.state.listFile.length != 0){
+          data.attach_files = this.state.listFile;
+        }
+        console.log(data);
+        await db.ref("chats").push(data);
+        this.setState({ content: '' });
+        this.setState({ listFile: [] });
+      } catch (error) {
+        this.setState({ writeError: error.message });
+      }
+    }
+    else{
+      alert("Nhập chữ vào dkm!!!!");
     }
   }
 
@@ -170,6 +200,53 @@ export default class Chat extends Component {
     this.setState({
       search: e.target.value
     });
+  }
+  uploadFiles(files){
+    const formData = new FormData();        
+    let len = files.length;
+    for(let i = 0; i< len; i++){
+      formData.append('files', files[i]);
+    }
+    axios.post('http://localhost:4500/uploads', formData, {
+        onUploadProgress: (ProgressEvent) => {
+            let progress = Math.round( ProgressEvent.loaded / ProgressEvent.total * 100 );
+            this.setState({processing : progress});
+        }
+    }).then(res => {
+      this.setState({processing : 0});
+      let data = res.data;
+      let len = data.length;
+      if(!len){
+        if(data.error != 1){
+          this.setState({listFile : [data]});
+        }
+        else{
+          alert(data.msg);
+        }
+      }
+      else{
+        let files = [];
+        data.forEach(d => {
+          if(d.error != 1){
+            files.push(d);
+          }
+          else{
+            alert(d.msg);
+          }
+        });
+        this.setState({listFile : files});
+      }
+    }).catch(err => console.log(err));
+  }
+  handleChangeFile(e){
+    const files = e.target.files;
+    const type = ["image/png", "image/jpg" , "image/jpeg" , "image/svg"];
+    if(filter(files,"type",type)){
+      this.uploadFiles(files);
+    }
+    else{
+      alert("Chỉ được gửi file ảnh !!!!");
+    }
   }
   renderUser(user,index,search){
       if(user.username.indexOf(search) !== -1){
@@ -261,25 +338,46 @@ export default class Chat extends Component {
                     <div className="img_cont_msg">
                       <img src={chat.from_uid == this.state.conver_user.user_id ? this.state.conver_user.profile_picture : this.state.user.profile_picture} className="rounded-circle user_img_msg" />
                     </div>
-                    <div className="msg_cotainer">
-                      {chat.content}
+                    <div className="image_cotainer">
+                      {chat.attach_files ? <div className="message__image">
+                        { chat.attach_files.map((f,i) => {
+                          return <img key={i} className="image_attach" src={f.path} alt="" />
+                        })
+                        }
+                        {chat.content == '' ? <span className="msg_time_image">{this.formatTime(chat.timestamp)}</span> : '' }
+                      </div> : ""}
+                    </div>
+                    {chat.content != '' ? <div className="msg_cotainer">
+                       {chat.content}
                       <span className="msg_time">{this.formatTime(chat.timestamp)}</span>
                     </div>
-                  </div>
+                   : ''}
+                   </div>
                 } 
                   })}
               </div>
               <div className="card-footer">
                 <form onSubmit={this.handleSubmit}>
                   <div className="input-group">
-                    <div className="input-group-append">
-                      <span className="input-group-text attach_btn"><i className="fas fa-paperclip" /></span>
+                    <div className="list__upload">
+                    {
+                      this.state.listFile.map((file, index) => {
+                        return <div key={index} title={file.name} className="image__upload">
+                          <img className="image__preview" src={file.path} />
+                          <span className="remove__btn">x</span>
+                        </div>
+                      })
+                    }
                     </div>
-                    <textarea onKeyUp={this.checkEnter} onChange={this.handleChange} value={this.state.content} className="form-control type_msg" placeholder="Type your message..."></textarea>
                     <div className="input-group-append">
-                      
+                      <label className="input-group-text attach_btn"><i className="fas fa-paperclip" /><input onChange={this.handleChangeFile} className="hidden__field" multiple type="file" /></label>
+                    </div>
+                    <div className="message__field">
+                      {this.state.processing > 0 ? <div style={{  width: this.state.processing + "%"}} className="process_bar"></div> : ""}
+                      <textarea onKeyUp={this.checkEnter} onChange={this.handleChange} value={this.state.content} className="form-control type_msg" placeholder="Type your message..."></textarea>
+                    </div>
+                    <div className="input-group-append">
                       <button type="submit"><span className="input-group-text send_btn"><i className="fas fa-location-arrow" /></span></button>
-                      
                     </div>
                   </div>
                 </form>

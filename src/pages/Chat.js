@@ -207,7 +207,7 @@ export default class Chat extends Component {
     for(let i = 0; i< len; i++){
       formData.append('files', files[i]);
     }
-    axios.post('http://localhost:4500/uploads', formData, {
+    axios.post('https://servernbchat1.herokuapp.com/uploads', formData, {
         onUploadProgress: (ProgressEvent) => {
             let progress = Math.round( ProgressEvent.loaded / ProgressEvent.total * 100 );
             this.setState({processing : progress});

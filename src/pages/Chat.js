@@ -239,14 +239,22 @@ export default class Chat extends Component {
     }).catch(err => console.log(err));
   }
   handleChangeFile(e){
+    
     const files = e.target.files;
     const type = ["image/png", "image/jpg" , "image/jpeg" , "image/svg"];
+    if(files.length == 0){
+      return;
+    }
     if(filter(files,"type",type)){
       this.uploadFiles(files);
     }
     else{
       alert("Chỉ được gửi file ảnh !!!!");
     }
+  }
+  removeImageUploadPreview(index){
+    this.state.listFile.splice(index,1);
+    this.setState({listFile : this.state.listFile});
   }
   renderUser(user,index,search){
       if(user.username.indexOf(search) !== -1){
@@ -364,7 +372,7 @@ export default class Chat extends Component {
                       this.state.listFile.map((file, index) => {
                         return <div key={index} title={file.name} className="image__upload">
                           <img className="image__preview" src={file.path} />
-                          <span className="remove__btn">x</span>
+                          <span onClick={this.removeImageUploadPreview.bind(this, index)} className="remove__btn">x</span>
                         </div>
                       })
                     }
